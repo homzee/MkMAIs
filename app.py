@@ -1,6 +1,6 @@
 import streamlit as st
 from openai import OpenAI
-from openai.types import APIError, RateLimitError
+from openai import error as openai_error
 
 st.set_page_config(page_title="AI電商内容生成助手", layout="wide")
 st.title("🛍️ AI電商内容生成助手")
@@ -56,12 +56,13 @@ if submitted and product_name and languages:
                     temperature=0.7,
                 )
                 st.info(f"✅ 使用模型：{model}")
-                break  # 成功就退出迴圈
+                break
 
-            except RateLimitError:
+            except openai_error.RateLimitError:
                 st.warning(f"⚠️ 模型 {model} 被限流，嘗試降級...")
-            except APIError as e:
-                st.error(f"❌ OpenAI 錯誤：{str(e)}")
+
+            except openai_error.APIError as e:
+                st.error(f"❌ OpenAI API 錯誤：{str(e)}")
                 break
 
         if response:
