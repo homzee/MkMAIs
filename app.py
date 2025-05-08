@@ -42,7 +42,7 @@ if submitted and product_name and languages:
 """
 
         response = client.chat.completions.create(
-            model="gpt-4",
+            model="gpt-4o",
             messages=[
                 {"role": "system", "content": "你是一位專業的多語電商文案撰寫AI"},
                 {"role": "user", "content": prompt}
