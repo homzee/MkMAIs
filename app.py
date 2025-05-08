@@ -1,5 +1,5 @@
 import streamlit as st
-import openai
+from openai import OpenAI
 
 st.set_page_config(page_title="AI電商内容生成助手", layout="wide")
 
@@ -18,8 +18,7 @@ with st.form("input_form"):
 
 if submitted and product_name and languages:
     with st.spinner("正在連接 OpenAI 生成內容..."):
-
-        openai.api_key = st.secrets["OPENAI_API_KEY"]
+        client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
 
         lang_str = "、".join(languages)
         video_flag = "需要短視頻腳本" if generate_video else "不需要短視頻腳本"
@@ -42,7 +41,7 @@ if submitted and product_name and languages:
 6. 短視頻字幕腳本（分5~10句字幕）
 """
 
-        response = openai.ChatCompletion.create(
+        response = client.chat.completions.create(
             model="gpt-4",
             messages=[
                 {"role": "system", "content": "你是一位專業的多語電商文案撰寫AI"},
