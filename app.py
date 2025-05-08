@@ -1,12 +1,12 @@
 import streamlit as st
 from openai import OpenAI
+from openai.types import APIError, RateLimitError
 
 st.set_page_config(page_title="AI電商内容生成助手", layout="wide")
-
 st.title("🛍️ AI電商内容生成助手")
 st.markdown("從商品名稱與關鍵字，自動生成多語言圖文與短視頻腳本")
 
-# 用户输入表单
+# 表單區
 with st.form("input_form"):
     product_name = st.text_input("商品名稱*", "")
     keywords = st.text_input("關鍵字（以逗號分隔）", "")
@@ -16,6 +16,7 @@ with st.form("input_form"):
     generate_video = st.checkbox("附帶短視頻腳本", value=True)
     submitted = st.form_submit_button("生成內容")
 
+# 核心邏輯
 if submitted and product_name and languages:
     with st.spinner("正在連接 OpenAI 生成內容..."):
         client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
@@ -41,15 +42,30 @@ if submitted and product_name and languages:
 6. 短視頻字幕腳本（分5~10句字幕）
 """
 
-        response = client.chat.completions.create(
-            model="gpt-3.5-turbo",
-            messages=[
-                {"role": "system", "content": "你是一位專業的多語電商文案撰寫AI"},
-                {"role": "user", "content": prompt}
-            ],
-            temperature=0.7,
-        )
+        model_list = ["gpt-4o", "gpt-3.5-turbo"]
+        response = None
 
-        output = response.choices[0].message.content
-        st.success("✅ 已成功生成內容")
-        st.text_area("🔽 生成結果", output, height=500)
+        for model in model_list:
+            try:
+                response = client.chat.completions.create(
+                    model=model,
+                    messages=[
+                        {"role": "system", "content": "你是一位專業的多語電商文案撰寫AI"},
+                        {"role": "user", "content": prompt}
+                    ],
+                    temperature=0.7,
+                )
+                st.info(f"✅ 使用模型：{model}")
+                break  # 成功就退出迴圈
+
+            except RateLimitError:
+                st.warning(f"⚠️ 模型 {model} 被限流，嘗試降級...")
+            except APIError as e:
+                st.error(f"❌ OpenAI 錯誤：{str(e)}")
+                break
+
+        if response:
+            output = response.choices[0].message.content
+            st.text_area("🔽 生成結果", output, height=500)
+        else:
+            st.error("❌ 無法生成內容，請稍後重試或檢查 API 設定。")
